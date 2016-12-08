@@ -63,8 +63,20 @@
 			labels: {
 				x: 'foo',
 				y: 'bar'
+			},
+			dimens: {
+				width: $canvas.width,
+				height: $canvas.height
 			}
 		});
+	
+		graph.setAxisX([-100, 100]);
+		graph.setAxisY([-100, 100]);
+	
+		// graph.plot(50, 50);
+		// graph.plot(25, 25);
+	
+		graph.start();
 	});
 
 /***/ },
@@ -103,12 +115,16 @@
 			_classCallCheck(this, Graph);
 	
 			this.DEFAULT_AXIS = [0, 200];
+			this.OFFSET = 30;
 	
 			this._points = [];
 			this._axis = {};
 			this._lines = [];
 	
 			this._ctx = config.context;
+	
+			this.width = config.dimens.width;
+			this.height = config.dimens.height;
 	
 			this._labels = {
 				x: config.labels.x || '',
@@ -117,6 +133,12 @@
 		}
 	
 		_createClass(Graph, [{
+			key: 'start',
+			value: function start() {
+	
+				this.render();
+			}
+		}, {
 			key: 'setAxisX',
 			value: function setAxisX(limits) {
 				this._axis.x = limits;
@@ -128,8 +150,15 @@
 			}
 		}, {
 			key: 'plot',
-			value: function plot(x, y, color) {
-				this._points.push({ x: x, y: y, color: color });
+			value: function plot(x, y) {
+				var color = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '#555';
+	
+	
+				this._points.push({
+					x: this.point.getX(x),
+					y: this.point.getY(y),
+					color: color
+				});
 			}
 		}, {
 			key: '_getLineEquation',
@@ -144,22 +173,71 @@
 	
 				var equation = void 0;
 	
-				if (_typeof(prop['2 points']) === 'object') equation = _Line.Line.twoPointToStandard(prop['2 points']);else if (_typeof(prop['standard']) === 'object') equation = prop['standard'];
+				if (_typeof(prop['2 points']) === 'object') equation = _Line.Line.toStandardForm(prop['2 points']);else if (_typeof(prop['standard']) === 'object') equation = [prop['standard'].m, prop['standard'].c];
 	
 				if (equation) this._lines.push(new _Line.Line(equation));
+			}
+		}, {
+			key: 'drawPoint',
+			value: function drawPoint(x, y) {
+				var color = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '#555';
+				var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 4;
+	
+	
+				console.log(x, y, color);
+				this._ctx.beginPath();
+				this._ctx.arc(x, y, size, 0, Math.PI * 2);
+	
+				this._ctx.save();
+				this._ctx.fillStyle = color;
+				this._ctx.fill();
+				this._ctx.restore();
+			}
+		}, {
+			key: 'relativeToOrigin',
+			value: function relativeToOrigin(originX, originY) {
+				return {
+					getX: function getX(x) {
+						return originX + x;
+					},
+					getY: function getY(y) {
+						return originY - y;
+					}
+				};
 			}
 		}, {
 			key: 'rendeAxis',
 			value: function rendeAxis() {
 	
-				// this._ctx.moveTo()
+				this._ctx.beginPath();
+				this._ctx.moveTo(this.width, this.point.getY(0));
+				this._ctx.lineTo(0, this.point.getY(0));
+	
+				this._ctx.moveTo(this.point.getX(0), 0);
+				this._ctx.lineTo(this.point.getX(0), this.height);
+	
+				this._ctx.strokeStyle = '#5180e9';
+				this._ctx.stroke();
+	
+				this.drawPoint(this.point.getX(0), this.point.getY(0), 'red', 2);
 			}
 		}, {
 			key: 'render',
 			value: function render() {
-				// Ctx rendering logic
+				var _this = this;
 	
-				// this._ctx.clearReact(0, 0, )
+				this._ctx.clearRect(0, 0, this.width, this.height);
+	
+				this.rendeAxis();
+	
+				this._points.forEach(function (p) {
+					_this.drawPoint(p.x, p.y, p.color);
+				});
+			}
+		}, {
+			key: 'point',
+			get: function get() {
+				return this.relativeToOrigin(this.width / 2 - (this.axis.x[0] + this.axis.x[1]) / 2, this.height / 2 - (this.axis.y[0] + this.axis.y[1]) / 2);
 			}
 		}, {
 			key: 'axis',
@@ -192,8 +270,8 @@
 	
 	var Line = exports.Line = function () {
 		_createClass(Line, null, [{
-			key: "twoPointToStandard",
-			value: function twoPointToStandard(points) {
+			key: "toStandardForm",
+			value: function toStandardForm(points) {
 	
 				var x1 = points[0][0],
 				    x2 = points[1][0],
@@ -201,22 +279,26 @@
 				    y2 = points[1][1],
 				    m = (y2 - y1) / (x2 - x1);
 	
-				return function (x) {
-					return m * x + (y1 - x1 * m);
-				};
+				return [m, y1 - x1 * m];
 			}
 		}]);
 	
-		function Line(eqn) {
+		function Line(m, c) {
 			_classCallCheck(this, Line);
 	
-			this.equation = eqn;
+			this.m = m;
+			this.c = c;
 		}
 	
 		_createClass(Line, [{
 			key: "getY",
 			value: function getY(x) {
-				return this.equation(x);
+				return this.m * x + this.c;
+			}
+		}, {
+			key: "getX",
+			value: function getX(y) {
+				return (y - this.c) / this.m;
 			}
 		}]);
 

@@ -16,6 +16,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		labels: {
 			x: 'foo',
 			y: 'bar'
+		},
+		dimens: {
+			width: $canvas.width,
+			height: $canvas.height,
 		}
 	});
+
+	graph.setAxisX([-100, 100]);
+	graph.setAxisY([-100, 100]);
+
+	// graph.plot(50, 50);
+	// graph.plot(25, 25);
+
+	graph.start();
 });
