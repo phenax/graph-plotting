@@ -2,15 +2,9 @@ const webpack = require('webpack');
 const path = require('path');
 
 
-const BUILD_DIR= path.resolve(__dirname, 'public/js');         // Build directory
-const APP_DIR= path.resolve(__dirname, 'front_end/js_es6');    // Source directory
+const APP_DIR= path.resolve(__dirname, 'js_es2015');    // Source directory
+const BUILD_DIR= path.resolve(__dirname, 'js');         // Build directory
 
-
-process.env.NODE_ENV= process.env.NODE_ENV || 'development';
-
-const isProduction= (process.env.NODE_ENV == 'production');
-
-console.log(process.env.NODE_ENV+" mode");
 
 const webpackConfig = {
 	
@@ -36,10 +30,10 @@ const webpackConfig = {
 		]
 	},
 
-	devtool: "source-map"
+	devtool: 'source-map'
 };
 
-if(isProduction) {
+if(process.argv.includes('-p')) {
 	
 	webpackConfig.devtool= false;
 

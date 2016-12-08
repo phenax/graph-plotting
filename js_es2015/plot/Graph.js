@@ -69,7 +69,7 @@ export class Graph {
 
 	rendeAxis() {
 
-		// this._ctx.
+		// this._ctx.moveTo()
 	}
 
 	render() {
