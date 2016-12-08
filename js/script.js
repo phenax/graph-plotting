@@ -79,7 +79,7 @@
 		graph.plot(-25, 25);
 		graph.plot(50, -50);
 	
-		graph.start();
+		graph.show();
 	});
 
 /***/ },
@@ -121,60 +121,48 @@
 			this.OFFSET = 30;
 	
 			this._points = [];
-			this._axis = {};
+			this.axis = {};
 			this._lines = [];
-	
-			this._scale = 1;
 	
 			this._ctx = config.context;
 	
 			this.width = config.dimens.width;
 			this.height = config.dimens.height;
 	
-			this._labels = {
+			this.labels = {
 				x: config.labels.x || '',
 				y: config.labels.y || ''
 			};
+	
+			this._init();
 		}
 	
 		_createClass(Graph, [{
-			key: 'start',
-			value: function start() {
+			key: '_init',
+			value: function _init() {
+				var _this = this;
 	
-				this.render();
+				this.proportionX = function (x) {
+					return _this.point.getX(x / _this.scale.x);
+				};
+				this.proportionY = function (y) {
+					return _this.point.getY(y / _this.scale.y);
+				};
 			}
 		}, {
-			key: 'setScale',
-			value: function setScale(scale) {
-				this._scale = scale;
+			key: 'show',
+			value: function show() {
+				this.render();
 			}
 		}, {
 			key: 'setAxisX',
 			value: function setAxisX(limits) {
-				if (limits[0] < limits[1]) this._axis.x = limits;
+				if (limits[0] < limits[1]) this.axis.x = limits;
 			}
 		}, {
 			key: 'setAxisY',
 			value: function setAxisY(limits) {
-				if (limits[0] < limits[1]) this._axis.y = limits;
-			}
-		}, {
-			key: 'proportionX',
-			value: function proportionX(x) {
-	
-				x /= (this.axis.x[1] - this.axis.x[0]) / this.width;
-				x = this.point.getX(x);
-	
-				return x;
-			}
-		}, {
-			key: 'proportionY',
-			value: function proportionY(y) {
-	
-				y /= (this.axis.y[1] - this.axis.y[0]) / this.height;
-				y = this.point.getY(y);
-	
-				return y;
+				if (limits[0] < limits[1]) this.axis.y = limits;
 			}
 		}, {
 			key: 'plot',
@@ -212,7 +200,6 @@
 				var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 4;
 	
 	
-				console.log(x, y, color);
 				this._ctx.beginPath();
 				this._ctx.arc(x, y, size, 0, Math.PI * 2);
 	
@@ -220,19 +207,6 @@
 				this._ctx.fillStyle = color;
 				this._ctx.fill();
 				this._ctx.restore();
-			}
-		}, {
-			key: 'relativeToOrigin',
-			value: function relativeToOrigin(originX, originY) {
-	
-				return {
-					getX: function getX(x) {
-						return originX + x;
-					},
-					getY: function getY(y) {
-						return originY - y;
-					}
-				};
 			}
 		}, {
 			key: 'drawLine',
@@ -262,30 +236,37 @@
 		}, {
 			key: 'render',
 			value: function render() {
-				var _this = this;
+				var _this2 = this;
 	
 				this._ctx.clearRect(0, 0, this.width, this.height);
 	
 				this.rendeAxis();
 	
 				this._points.forEach(function (p) {
-					_this.drawPoint(p.x, p.y, p.color);
+					_this2.drawPoint(p.x, p.y, p.color);
 				});
 			}
 		}, {
 			key: 'point',
 			get: function get() {
-				return this.relativeToOrigin(this.width / 2 - (this.axis.x[0] + this.axis.x[1]) / 2, this.height / 2 + (this.axis.y[0] + this.axis.y[1]) / 2);
+				var _this3 = this;
+	
+				return {
+					getX: function getX(x) {
+						return _this3.width / 2 - (_this3.axis.x[0] + _this3.axis.x[1]) / 2 + x;
+					},
+					getY: function getY(y) {
+						return _this3.height / 2 + (_this3.axis.y[0] + _this3.axis.y[1]) / 2 - y;
+					}
+				};
 			}
 		}, {
-			key: 'axis',
+			key: 'scale',
 			get: function get() {
-				return Object.create(this._axis);
-			}
-		}, {
-			key: 'labels',
-			get: function get() {
-				return Object.create(this._labels);
+				return {
+					x: (this.axis.x[1] - this.axis.x[0]) / this.width,
+					y: (this.axis.y[1] - this.axis.y[0]) / this.height
+				};
 			}
 		}]);
 

@@ -32,5 +32,5 @@ document.addEventListener('DOMContentLoaded', () => {
 	graph.plot(-25, 25);
 	graph.plot(50, -50);
 
-	graph.start();
+	graph.show();
 });

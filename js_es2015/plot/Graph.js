@@ -19,73 +19,54 @@ export class Graph {
 		this.OFFSET= 30;
 
 		this._points= [];
-		this._axis= {};
+		this.axis= {};
 		this._lines= [];
-
-		this._scale= 1;
 
 		this._ctx= config.context;
 
 		this.width= config.dimens.width;
 		this.height= config.dimens.height;
 
-		this._labels= {
+		this.labels= {
 			x: config.labels.x || '',
 			y: config.labels.y || '',
 		};
+
+		this._init();
 	}
 
+	_init() {
 
-	start() {
+		this.proportionX= x => this.point.getX( x / this.scale.x );
+		this.proportionY= y => this.point.getY( y / this.scale.y );
+	}
 
+	show() {
 		this.render();
 	}
 
 	get point() {
-		return this.relativeToOrigin(
-			this.width/2 - (this.axis.x[0] + this.axis.x[1])/2, 
-			this.height/2 + (this.axis.y[0] + this.axis.y[1])/2
-		);
+		return {
+			getX: x => (this.width/2 - (this.axis.x[0] + this.axis.x[1])/2 + x),
+			getY: y => (this.height/2 + (this.axis.y[0] + this.axis.y[1])/2 - y),
+		};
 	}
 
-	get axis() {
-		return Object.create(this._axis);
-	}
-
-	get labels() {
-		return Object.create(this._labels);
-	}
-
-	setScale(scale) {
-		this._scale= scale;
+	get scale() {
+		return {
+			x: (this.axis.x[1] - this.axis.x[0])/this.width,
+			y: (this.axis.y[1] - this.axis.y[0])/this.height,
+		};
 	}
 
 	setAxisX(limits) {
 		if(limits[0] < limits[1])
-			this._axis.x= limits;
+			this.axis.x= limits;
 	}
 
 	setAxisY(limits) {
 		if(limits[0] < limits[1])
-			this._axis.y= limits;
-	}
-
-	proportionX(x) {
-
-		x /= (this.axis.x[1] - this.axis.x[0])/this.width;
-		x= this.point.getX(x);
-
-
-		return x;
-	}
-
-	proportionY(y) {
-
-		y /= (this.axis.y[1] - this.axis.y[0])/this.height;
-		y= this.point.getY(y);
-
-	
-		return y;	
+			this.axis.y= limits;
 	}
 
 	plot(x, y, color='#555') {
@@ -117,7 +98,6 @@ export class Graph {
 
 	drawPoint(x, y, color='#555', size=4) {
 
-		console.log(x, y, color);
 		this._ctx.beginPath();
 		this._ctx.arc(x, y, size, 0, Math.PI*2);
 
@@ -125,14 +105,6 @@ export class Graph {
 		this._ctx.fillStyle= color;
 		this._ctx.fill();
 		this._ctx.restore();
-	}
-
-	relativeToOrigin(originX, originY) {
-
-		return {
-			getX(x) { return originX + x; },
-			getY(y) { return originY - y; }
-		};
 	}
 
 	drawLine(p1, p2, color='#555') {
