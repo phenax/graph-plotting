@@ -1,0 +1,21 @@
+{
+  "name": "plotting",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.html",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "__"
+  },
+  "repository": {
+    "type": "git",
+    "url": "__"
+  },
+  "keywords": [
+    "__"
+  ],
+  "author": "Akshay Nair <phenax5@gmail.com>",
+  "license": "Apache-2.0"
+}
