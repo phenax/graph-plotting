@@ -26,8 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	graph.setAxisX([-100, 100]);
 	graph.setAxisY([-100, 100]);
 
-	// graph.plot(50, 50);
-	// graph.plot(25, 25);
+	graph.plot(25, 25);
+	graph.plot(50, 50);
+
+	graph.plot(-25, 25);
+	graph.plot(50, -50);
 
 	graph.start();
 });

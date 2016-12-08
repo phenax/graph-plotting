@@ -73,8 +73,11 @@
 		graph.setAxisX([-100, 100]);
 		graph.setAxisY([-100, 100]);
 	
-		// graph.plot(50, 50);
-		// graph.plot(25, 25);
+		graph.plot(25, 25);
+		graph.plot(50, 50);
+	
+		graph.plot(-25, 25);
+		graph.plot(50, -50);
 	
 		graph.start();
 	});
@@ -121,6 +124,8 @@
 			this._axis = {};
 			this._lines = [];
 	
+			this._scale = 1;
+	
 			this._ctx = config.context;
 	
 			this.width = config.dimens.width;
@@ -139,14 +144,37 @@
 				this.render();
 			}
 		}, {
+			key: 'setScale',
+			value: function setScale(scale) {
+				this._scale = scale;
+			}
+		}, {
 			key: 'setAxisX',
 			value: function setAxisX(limits) {
-				this._axis.x = limits;
+				if (limits[0] < limits[1]) this._axis.x = limits;
 			}
 		}, {
 			key: 'setAxisY',
 			value: function setAxisY(limits) {
-				this._axis.y = limits;
+				if (limits[0] < limits[1]) this._axis.y = limits;
+			}
+		}, {
+			key: 'proportionX',
+			value: function proportionX(x) {
+	
+				x /= (this.axis.x[1] - this.axis.x[0]) / this.width;
+				x = this.point.getX(x);
+	
+				return x;
+			}
+		}, {
+			key: 'proportionY',
+			value: function proportionY(y) {
+	
+				y /= (this.axis.y[1] - this.axis.y[0]) / this.height;
+				y = this.point.getY(y);
+	
+				return y;
 			}
 		}, {
 			key: 'plot',
@@ -155,8 +183,8 @@
 	
 	
 				this._points.push({
-					x: this.point.getX(x),
-					y: this.point.getY(y),
+					x: this.proportionX(x),
+					y: this.proportionY(y),
 					color: color
 				});
 			}
@@ -196,6 +224,7 @@
 		}, {
 			key: 'relativeToOrigin',
 			value: function relativeToOrigin(originX, originY) {
+	
 				return {
 					getX: function getX(x) {
 						return originX + x;
@@ -246,7 +275,7 @@
 		}, {
 			key: 'point',
 			get: function get() {
-				return this.relativeToOrigin(this.width / 2 - (this.axis.x[0] + this.axis.x[1]) / 2, this.height / 2 - (this.axis.y[0] + this.axis.y[1]) / 2);
+				return this.relativeToOrigin(this.width / 2 - (this.axis.x[0] + this.axis.x[1]) / 2, this.height / 2 + (this.axis.y[0] + this.axis.y[1]) / 2);
 			}
 		}, {
 			key: 'axis',

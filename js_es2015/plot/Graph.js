@@ -22,6 +22,8 @@ export class Graph {
 		this._axis= {};
 		this._lines= [];
 
+		this._scale= 1;
+
 		this._ctx= config.context;
 
 		this.width= config.dimens.width;
@@ -36,15 +38,13 @@ export class Graph {
 
 	start() {
 
-
-
 		this.render();
 	}
 
 	get point() {
 		return this.relativeToOrigin(
 			this.width/2 - (this.axis.x[0] + this.axis.x[1])/2, 
-			this.height/2 - (this.axis.y[0] + this.axis.y[1])/2
+			this.height/2 + (this.axis.y[0] + this.axis.y[1])/2
 		);
 	}
 
@@ -56,19 +56,43 @@ export class Graph {
 		return Object.create(this._labels);
 	}
 
+	setScale(scale) {
+		this._scale= scale;
+	}
+
 	setAxisX(limits) {
-		this._axis.x= limits;
+		if(limits[0] < limits[1])
+			this._axis.x= limits;
 	}
 
 	setAxisY(limits) {
-		this._axis.y= limits;
+		if(limits[0] < limits[1])
+			this._axis.y= limits;
+	}
+
+	proportionX(x) {
+
+		x /= (this.axis.x[1] - this.axis.x[0])/this.width;
+		x= this.point.getX(x);
+
+
+		return x;
+	}
+
+	proportionY(y) {
+
+		y /= (this.axis.y[1] - this.axis.y[0])/this.height;
+		y= this.point.getY(y);
+
+	
+		return y;	
 	}
 
 	plot(x, y, color='#555') {
 
 		this._points.push({
-			x: this.point.getX(x),
-			y: this.point.getY(y),
+			x: this.proportionX(x),
+			y: this.proportionY(y),
 			color
 		});
 	}
@@ -104,6 +128,7 @@ export class Graph {
 	}
 
 	relativeToOrigin(originX, originY) {
+
 		return {
 			getX(x) { return originX + x; },
 			getY(y) { return originY - y; }
