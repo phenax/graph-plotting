@@ -110,17 +110,31 @@ export class Graph {
 		};
 	}
 
-	rendeAxis() {
+	drawLine(p1, p2, color='#555') {
 
 		this._ctx.beginPath();
-		this._ctx.moveTo(this.width, this.point.getY(0));
-		this._ctx.lineTo(0, this.point.getY(0));
+		this._ctx.moveTo(p1.x, p1.y);
+		this._ctx.lineTo(p2.x, p2.y);
 
-		this._ctx.moveTo(this.point.getX(0), 0);
-		this._ctx.lineTo(this.point.getX(0), this.height);
-
-		this._ctx.strokeStyle= '#5180e9';
+		this._ctx.save();
+		this._ctx.strokeStyle= color;
 		this._ctx.stroke();
+		this._ctx.restore();
+	}
+
+	rendeAxis() {
+
+		this.drawLine(
+			{ x: this.width, y: this.point.getY(0) },
+			{ x: 0, y: this.point.getY(0) },
+			'rgba(81, 128, 233, .7)'
+		);
+
+		this.drawLine(
+			{ x: this.point.getX(0), y: 0 },
+			{ x: this.point.getX(0), y: this.height },
+			'rgba(81, 128, 233, .7)'
+		);
 
 		this.drawPoint(this.point.getX(0), this.point.getY(0), 'red', 2);
 	}
