@@ -108,14 +108,25 @@
 	var Graph = exports.Graph = function () {
 		_createClass(Graph, null, [{
 			key: 'getMockContext',
+	
+	
+			// Mock context object for drawing
 			value: function getMockContext() {
 	
-				var fn = function fn() {};
+				var fnNames = ['moveTo', 'lineTo', 'clearRect', 'arc'];
 	
-				return {
-					lineTo: fn, moveTo: fn, clearRect: fn,
-					arc: fn
+				var self = { calledFn: [] };
+				var fn = function fn(name) {
+					return function () {
+						return self.calledFn.push(name);
+					};
 				};
+	
+				fnNames.forEach(function (name) {
+					return self[name] = fn(name);
+				});
+	
+				return self;
 			}
 		}]);
 	
@@ -137,6 +148,9 @@
 	
 			this._init();
 		}
+	
+		// 
+	
 	
 		_createClass(Graph, [{
 			key: '_init',

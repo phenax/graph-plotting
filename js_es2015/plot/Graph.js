@@ -4,14 +4,19 @@ import { Line } from './Line';
 
 export class Graph {
 
+	// Mock context object for drawing
 	static getMockContext() {
 
-		const fn= () => {};
+		const fnNames= [
+			'moveTo', 'lineTo', 'clearRect', 'arc',
+		];
 
-		return {
-			lineTo: fn, moveTo: fn, clearRect: fn, 
-			arc: fn, 
-		};
+		const self= { calledFn: [] };
+		const fn= (name) => () => self.calledFn.push(name);
+
+		fnNames.forEach( name => self[name] = fn(name) );
+
+		return self;
 	}
 
 	constructor(config) {
@@ -32,6 +37,7 @@ export class Graph {
 		this._init();
 	}
 
+	// 
 	_init() {
 
 		this._points= [];
