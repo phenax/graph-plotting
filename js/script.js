@@ -52,7 +52,7 @@
 	
 		var $canvas = document.createElement('canvas');
 		$canvas.width = 500;
-		$canvas.height = 500;
+		$canvas.height = 600;
 	
 		document.body.appendChild($canvas);
 	
@@ -70,18 +70,17 @@
 			}
 		});
 	
-		graph.setAxisX([-100, 100]);
-		graph.setAxisY([-100, 200]);
+		var getRandomNumber = function getRandomNumber(min, max) {
+			return Math.floor(Math.random() * (max - min + 1) + min);
+		};
 	
-		graph.plot(25, 25);
-		graph.plot(50, 50);
+		graph.setAxisX([-100, 100]).setAxisY([-100, 100]);
 	
-		graph.plot(-25, 25);
-		graph.plot(50, -50);
+		for (var i = 0; i < 20; i++) {
+			graph.plot(getRandomNumber(-100, 100), getRandomNumber(-100, 100));
+		}
 	
-		graph.addLine({
-			'standard': { m: 1, c: 50 }
-		});
+		graph.plotLine({ 'standard': { m: 1, c: 0 } });
 	
 		graph.show();
 	});
@@ -115,30 +114,35 @@
 	
 				var fnNames = ['moveTo', 'lineTo', 'clearRect', 'arc'];
 	
-				var self = { calledFn: [] };
+				var ctx = { calledFn: [] };
 				var fn = function fn(name) {
 					return function () {
-						return self.calledFn.push(name);
+						return ctx.calledFn.push(name);
 					};
 				};
 	
 				fnNames.forEach(function (name) {
-					return self[name] = fn(name);
+					return ctx[name] = fn(name);
 				});
 	
-				return self;
+				return ctx;
 			}
 		}]);
 	
 		function Graph(config) {
 			_classCallCheck(this, Graph);
 	
-			this.AXIS_COLOR = 'rgba(81, 128, 233, .7)';
-			this.GRID_COLOR = '#888';
+			// colors
+			this.AXIS_COLOR = 'rgba(81, 128, 233, .8)';
+			this.GRID_COLOR = 'rgba(0,0,0,.3)';
 			this.CENTER_COLOR = '#e95051';
+			this.DEFAULT_LINE_COLOR = '#888';
+	
+			this.AXIS_LIMIT_ERROR = 'The axis lower limit cannot be greater than the upper limit';
 	
 			this._ctx = config.context;
 	
+			// Dimensions(True dimensions)
 			this.width = config.dimens.width;
 			this.height = config.dimens.height;
 	
@@ -158,10 +162,23 @@
 			value: function _init() {
 				var _this = this;
 	
-				this._points = [];
 				this.axis = {};
+	
+				// Figures
+				this._points = [];
 				this._lines = [];
 	
+				// Shift and transform origin
+				this.point = {
+					shiftX: function shiftX(x) {
+						return _this.width / 2 - (_this.axis.x[1] + _this.axis.x[0]) + x;
+					},
+					shiftY: function shiftY(y) {
+						return _this.height / 2 + (_this.axis.y[1] + _this.axis.y[0]) - y;
+					}
+				};
+	
+				// Scale point to the real canvas coordinates
 				this.proportionX = function (x) {
 					return _this.point.shiftX(x / _this.scale.x);
 				};
@@ -171,57 +188,93 @@
 	
 				this.render = this.render.bind(this);
 			}
+	
+			// Axes upper limit to lower limit length(pseudo dimensions)
+	
 		}, {
 			key: 'show',
+	
+	
+			// Render the graph and plot all figures
 			value: function show() {
 				requestAnimationFrame(this.render);
 			}
+	
+			// Set the X axis limits
+	
 		}, {
 			key: 'setAxisX',
 			value: function setAxisX(limits) {
-				if (limits[0] < limits[1]) this.axis.x = limits;else throw new Error('The axis lower limit cannot be greater than the upper limit');
+				if (limits[0] < limits[1]) this.axis.x = limits;else throw new Error(this.AXIS_LIMIT_ERROR);
+				return this;
 			}
+	
+			// Set the Y axis limits
+	
 		}, {
 			key: 'setAxisY',
 			value: function setAxisY(limits) {
-				if (limits[0] < limits[1]) this.axis.y = limits;else throw new Error('The axis lower limit cannot be greater than the upper limit');
+				if (limits[0] < limits[1]) this.axis.y = limits;else throw new Error(this.AXIS_LIMIT_ERROR);
+				return this;
 			}
+	
+			// Add a point to the figures to render
+	
 		}, {
 			key: 'plot',
 			value: function plot(x, y) {
 				var color = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '#555';
 	
 				this._points.push({
-					x: this.proportionX(x),
-					y: this.proportionY(y),
+					x: x,
+					y: y,
 					color: color
 				});
+	
+				return this;
 			}
+	
+			// Add a line to the figures to render
+	
 		}, {
-			key: 'addLine',
-			value: function addLine(prop) {
+			key: 'plotLine',
+			value: function plotLine(prop) {
+	
+				if ((typeof prop === 'undefined' ? 'undefined' : _typeof(prop)) !== 'object') return;
 	
 				var equation = void 0;
 	
-				if (_typeof(prop['2 points']) === 'object') equation = _Line.Line.toStandardForm(prop['2 points']);else if (_typeof(prop.standard) === 'object') equation = [prop.standard.m, prop.standard.c];
+				// Two point form
+				if (_typeof(prop['2 points']) === 'object') equation = _Line.Line.toStandardForm(prop['2 points']);
+	
+				// Standard form
+				else if (_typeof(prop.standard) === 'object') equation = [prop.standard.m, prop.standard.c];
 	
 				if (equation) this._lines.push(new _Line.Line(equation[0], equation[1]));
+	
+				return this;
 			}
+	
+			// Draw a point on the graph
+	
 		}, {
 			key: 'drawPoint',
 			value: function drawPoint(x, y) {
 				var color = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '#555';
-				var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 4;
+				var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 3;
 	
 	
 				this._ctx.beginPath();
-				this._ctx.arc(x, y, size, 0, Math.PI * 2);
+				this._ctx.arc(this.proportionX(x), this.proportionY(y), size, 0, Math.PI * 2);
 	
 				this._ctx.save();
 				this._ctx.fillStyle = color;
 				this._ctx.fill();
 				this._ctx.restore();
 			}
+	
+			// Draw a line segment on the graph
+	
 		}, {
 			key: 'drawSegment',
 			value: function drawSegment(p1, p2) {
@@ -232,18 +285,20 @@
 				this._ctx.lineWidth = size;
 	
 				this._ctx.beginPath();
-				this._ctx.moveTo(p1.x, p1.y);
-				this._ctx.lineTo(p2.x, p2.y);
+				this._ctx.moveTo(this.proportionX(p1.x), this.proportionY(p1.y));
+				this._ctx.lineTo(this.proportionX(p2.x), this.proportionY(p2.y));
 	
 				this._ctx.save();
 				this._ctx.strokeStyle = color;
 				this._ctx.stroke();
 				this._ctx.restore();
 			}
+	
+			// Draw a line(i.e. draw a segment i.e. a segment that extends to the boundaries of the graph)
+	
 		}, {
 			key: 'drawLine',
-			value: function drawLine(line) {
-				var _this2 = this;
+			value: function drawLine(line, color, size) {
 	
 				var points = void 0;
 	
@@ -267,93 +322,90 @@
 					}];
 				}
 	
-				points = points.map(function (p) {
-					return {
-						x: _this2.proportionX(p.x),
-						y: _this2.proportionY(p.y)
-					};
-				});
-	
-				this.drawSegment(points[0], points[1]);
+				this.drawSegment(points[0], points[1], color, size);
 			}
+	
+			// Render the axes
+	
 		}, {
 			key: 'renderAxis',
 			value: function renderAxis() {
 	
 				// Draw the y axis
-				this.drawSegment({ x: this.width, y: this.point.shiftY(0) }, { x: 0, y: this.point.shiftY(0) }, this.AXIS_COLOR);
+				this.drawSegment({ x: this.axis.x[0], y: 0 }, { x: this.axis.x[1], y: 0 }, this.AXIS_COLOR);
 	
 				// Draw the x axis
-				this.drawSegment({ x: this.point.shiftX(0), y: 0 }, { x: this.point.shiftX(0), y: this.height }, this.AXIS_COLOR);
+				this.drawSegment({ x: 0, y: this.axis.y[0] }, { x: 0, y: this.axis.y[1] }, this.AXIS_COLOR);
 	
 				// Origin
-				this.drawPoint(this.point.shiftX(0), this.point.shiftY(0), this.CENTER_COLOR, 2);
+				this.drawPoint(0, 0, this.CENTER_COLOR, 2);
 			}
+	
+			// Render the grid
+	
 		}, {
 			key: 'renderGrid',
 			value: function renderGrid(size) {
 	
-				var divX = Math.floor((this.axis.x[1] - this.axis.x[0]) / size);
-				var divY = Math.floor((this.axis.y[1] - this.axis.y[0]) / size);
+				for (var i = 0; i <= this.dimens.x; i += size) {
 	
-				for (var i = 0; i < divX; i++) {
+					var x = i + size * Math.ceil(this.axis.x[0] / size);
 	
-					var x = this.proportionX((i - Math.floor(divX / 2)) * size);
-	
-					this.drawSegment({ x: x, y: 0 }, { x: x, y: this.height }, this.GRID_COLOR, .3);
+					this.drawSegment({ x: x, y: this.axis.y[0] }, { x: x, y: this.axis.y[1] }, this.GRID_COLOR, .3);
 				}
 	
-				for (var _i = 0; _i < divY; _i++) {
+				for (var _i = 0; _i <= this.dimens.y; _i += size) {
 	
-					var y = this.proportionY((_i - Math.floor(divY / 2)) * size);
+					var y = _i + size * Math.ceil(this.axis.y[0] / size);
 	
-					this.drawSegment({ x: this.width, y: y }, { x: 0, y: y }, this.GRID_COLOR, .3);
+					this.drawSegment({ x: this.axis.x[0], y: y }, { x: this.axis.x[1], y: y }, this.GRID_COLOR, .3);
 				}
 			}
+	
+			// Render everything in the graph(all points, all segments, grid, axes, origin)
+	
 		}, {
 			key: 'render',
 			value: function render() {
-				var _this3 = this;
+				var _this2 = this;
 	
 				this._ctx.clearRect(0, 0, this.width, this.height);
 	
+				// Render a grid
 				this.renderGrid(10);
 	
 				// Draw all points
 				this._points.forEach(function (p) {
-					return _this3.drawPoint(p.x, p.y, p.color);
+					return _this2.drawPoint(p.x, p.y, p.color);
 				});
 	
 				// Draw all lines
-				this._lines.forEach(function (l) {
-					return _this3.drawLine(l);
+				this._lines.forEach(function (line) {
+					return _this2.drawLine(line, _this2.DEFAULT_LINE_COLOR);
 				});
 	
-				// Render the axis'
+				// Render the axes
 				this.renderAxis();
 	
 				// requestAnimationFrame(this.render);
 			}
 		}, {
-			key: 'point',
+			key: 'dimens',
 			get: function get() {
-				var _this4 = this;
-	
 				return {
-					shiftX: function shiftX(x) {
-						return _this4.width / 2 - (_this4.axis.x[0] + _this4.axis.x[1]) / 2 + x;
-					},
-					shiftY: function shiftY(y) {
-						return _this4.height / 2 + (_this4.axis.y[0] + _this4.axis.y[1]) / 2 - y;
-					}
+					x: this.axis.x[1] - this.axis.x[0],
+					y: this.axis.y[1] - this.axis.y[0]
 				};
 			}
+	
+			// The scale of the graph
+	
 		}, {
 			key: 'scale',
 			get: function get() {
 				return {
-					x: (this.axis.x[1] - this.axis.x[0]) / this.width,
-					y: (this.axis.y[1] - this.axis.y[0]) / this.height
+					x: this.dimens.x / this.width,
+					y: this.dimens.y / this.height
 				};
 			}
 		}]);
@@ -393,8 +445,8 @@
 		function Line(m, c) {
 			_classCallCheck(this, Line);
 	
-			this.m = m || 1;
-			this.c = c || 0;
+			this.m = m;
+			this.c = c;
 		}
 	
 		_createClass(Line, [{
