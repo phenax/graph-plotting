@@ -71,7 +71,7 @@
 		});
 	
 		graph.setAxisX([-100, 100]);
-		graph.setAxisY([-100, 100]);
+		graph.setAxisY([-100, 200]);
 	
 		graph.plot(25, 25);
 		graph.plot(50, 50);
@@ -110,7 +110,7 @@
 			key: 'getMockContext',
 	
 	
-			// Mock context object for drawing
+			// Mock canvas context object for testing
 			value: function getMockContext() {
 	
 				var fnNames = ['moveTo', 'lineTo', 'clearRect', 'arc'];
@@ -134,6 +134,7 @@
 			_classCallCheck(this, Graph);
 	
 			this.AXIS_COLOR = 'rgba(81, 128, 233, .7)';
+			this.GRID_COLOR = '#888';
 			this.CENTER_COLOR = '#e95051';
 	
 			this._ctx = config.context;
@@ -149,7 +150,7 @@
 			this._init();
 		}
 	
-		// 
+		// Initialize state and state getters
 	
 	
 		_createClass(Graph, [{
@@ -167,11 +168,13 @@
 				this.proportionY = function (y) {
 					return _this.point.shiftY(y / _this.scale.y);
 				};
+	
+				this.render = this.render.bind(this);
 			}
 		}, {
 			key: 'show',
 			value: function show() {
-				this.render();
+				requestAnimationFrame(this.render);
 			}
 		}, {
 			key: 'setAxisX',
@@ -223,7 +226,10 @@
 			key: 'drawSegment',
 			value: function drawSegment(p1, p2) {
 				var color = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '#555';
+				var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1;
 	
+	
+				this._ctx.lineWidth = size;
 	
 				this._ctx.beginPath();
 				this._ctx.moveTo(p1.x, p1.y);
@@ -284,11 +290,34 @@
 				this.drawPoint(this.point.shiftX(0), this.point.shiftY(0), this.CENTER_COLOR, 2);
 			}
 		}, {
+			key: 'renderGrid',
+			value: function renderGrid(size) {
+	
+				var divX = Math.floor((this.axis.x[1] - this.axis.x[0]) / size);
+				var divY = Math.floor((this.axis.y[1] - this.axis.y[0]) / size);
+	
+				for (var i = 0; i < divX; i++) {
+	
+					var x = this.proportionX((i - Math.floor(divX / 2)) * size);
+	
+					this.drawSegment({ x: x, y: 0 }, { x: x, y: this.height }, this.GRID_COLOR, .3);
+				}
+	
+				for (var _i = 0; _i < divY; _i++) {
+	
+					var y = this.proportionY((_i - Math.floor(divY / 2)) * size);
+	
+					this.drawSegment({ x: this.width, y: y }, { x: 0, y: y }, this.GRID_COLOR, .3);
+				}
+			}
+		}, {
 			key: 'render',
 			value: function render() {
 				var _this3 = this;
 	
 				this._ctx.clearRect(0, 0, this.width, this.height);
+	
+				this.renderGrid(10);
 	
 				// Draw all points
 				this._points.forEach(function (p) {
@@ -300,7 +329,10 @@
 					return _this3.drawLine(l);
 				});
 	
+				// Render the axis'
 				this.renderAxis();
+	
+				// requestAnimationFrame(this.render);
 			}
 		}, {
 			key: 'point',
@@ -375,6 +407,9 @@
 			value: function getX(y) {
 				return (y - this.c) / this.m;
 			}
+	
+			// getNormalAt(x, y) {}
+	
 		}, {
 			key: "slope",
 			get: function get() {

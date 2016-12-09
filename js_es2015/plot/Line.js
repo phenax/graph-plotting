@@ -22,4 +22,6 @@ export class Line {
 
 	getY(x) { return this.m*x + this.c; }
 	getX(y) { return (y - this.c)/this.m; }
+
+	// getNormalAt(x, y) {}
 }

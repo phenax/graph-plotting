@@ -4,7 +4,7 @@ import { Line } from './Line';
 
 export class Graph {
 
-	// Mock context object for drawing
+	// Mock canvas context object for testing
 	static getMockContext() {
 
 		const fnNames= [
@@ -12,16 +12,18 @@ export class Graph {
 		];
 
 		const self= { calledFn: [] };
-		const fn= (name) => () => self.calledFn.push(name);
+		const fn= name => () => self.calledFn.push(name);
 
 		fnNames.forEach( name => self[name] = fn(name) );
 
 		return self;
 	}
 
+
 	constructor(config) {
 
 		this.AXIS_COLOR= 'rgba(81, 128, 233, .7)';
+		this.GRID_COLOR= '#888';
 		this.CENTER_COLOR= '#e95051';
 
 		this._ctx= config.context;
@@ -37,7 +39,7 @@ export class Graph {
 		this._init();
 	}
 
-	// 
+	// Initialize state and state getters
 	_init() {
 
 		this._points= [];
@@ -46,10 +48,12 @@ export class Graph {
 
 		this.proportionX= x => this.point.shiftX( x / this.scale.x );
 		this.proportionY= y => this.point.shiftY( y / this.scale.y );
+
+		this.render= this.render.bind(this);
 	}
 
 	show() {
-		this.render();
+		requestAnimationFrame(this.render);
 	}
 
 	get point() {
@@ -111,7 +115,9 @@ export class Graph {
 		this._ctx.restore();
 	}
 
-	drawSegment(p1, p2, color='#555') {
+	drawSegment(p1, p2, color='#555', size=1) {
+
+		this._ctx.lineWidth= size;
 
 		this._ctx.beginPath();
 		this._ctx.moveTo(p1.x, p1.y);
@@ -175,9 +181,39 @@ export class Graph {
 		this.drawPoint(this.point.shiftX(0), this.point.shiftY(0), this.CENTER_COLOR, 2);
 	}
 
+	renderGrid(size) {
+
+		const divX= Math.floor((this.axis.x[1] - this.axis.x[0])/size);
+		const divY= Math.floor((this.axis.y[1] - this.axis.y[0])/size);
+
+		for(let i= 0; i< divX; i++) {
+
+			const x= this.proportionX((i - Math.floor(divX/2))*size);
+
+			this.drawSegment(
+				{ x, y: 0 },
+				{ x, y: this.height },
+				this.GRID_COLOR, .3
+			);
+		}
+
+		for(let i= 0; i< divY; i++) {
+
+			const y= this.proportionY((i - Math.floor(divY/2))*size);
+
+			this.drawSegment(
+				{ x: this.width, y },
+				{ x: 0, y },
+				this.GRID_COLOR, .3
+			);
+		}
+	}
+
 	render() {
 
 		this._ctx.clearRect(0, 0, this.width, this.height);
+
+		this.renderGrid(10);
 
 		// Draw all points
 		this._points.forEach( p => this.drawPoint(p.x, p.y, p.color));
@@ -185,6 +221,9 @@ export class Graph {
 		// Draw all lines
 		this._lines.forEach( l => this.drawLine(l));
 
+		// Render the axis'
 		this.renderAxis();
+
+		// requestAnimationFrame(this.render);
 	}
 }
