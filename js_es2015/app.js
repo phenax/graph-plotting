@@ -32,5 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	graph.plot(-25, 25);
 	graph.plot(50, -50);
 
+	graph.addLine({
+		'standard': { m: 1, c: 50 },
+		// '2 points': [ [-25, 25], [50, -50] ],
+	});
+
 	graph.show();
 });

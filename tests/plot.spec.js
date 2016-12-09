@@ -18,6 +18,10 @@ describe('Graph plotter', () => {
 			labels: {
 				x: 'awesome',
 				y: 'ness'
+			},
+			dimens: {
+				width: 500,
+				height: 500,
 			}
 		});
 

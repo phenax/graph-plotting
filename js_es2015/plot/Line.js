@@ -14,9 +14,11 @@ export class Line {
 	}
 
 	constructor(m, c) {
-		this.m= m;
-		this.c= c;
+		this.m= m || 1;
+		this.c= c || 0;
 	}
+
+	get slope() { return this.m; }
 
 	getY(x) { return this.m*x + this.c; }
 	getX(y) { return (y - this.c)/this.m; }

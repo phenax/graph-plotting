@@ -79,6 +79,10 @@
 		graph.plot(-25, 25);
 		graph.plot(50, -50);
 	
+		graph.addLine({
+			'standard': { m: 1, c: 50 }
+		});
+	
 		graph.show();
 	});
 
@@ -109,7 +113,8 @@
 				var fn = function fn() {};
 	
 				return {
-					lineTo: fn, moveTo: fn, clearRect: fn
+					lineTo: fn, moveTo: fn, clearRect: fn,
+					arc: fn
 				};
 			}
 		}]);
@@ -117,12 +122,8 @@
 		function Graph(config) {
 			_classCallCheck(this, Graph);
 	
-			this.DEFAULT_AXIS = [0, 200];
-			this.OFFSET = 30;
-	
-			this._points = [];
-			this.axis = {};
-			this._lines = [];
+			this.AXIS_COLOR = 'rgba(81, 128, 233, .7)';
+			this.CENTER_COLOR = '#e95051';
 	
 			this._ctx = config.context;
 	
@@ -142,11 +143,15 @@
 			value: function _init() {
 				var _this = this;
 	
+				this._points = [];
+				this.axis = {};
+				this._lines = [];
+	
 				this.proportionX = function (x) {
-					return _this.point.getX(x / _this.scale.x);
+					return _this.point.shiftX(x / _this.scale.x);
 				};
 				this.proportionY = function (y) {
-					return _this.point.getY(y / _this.scale.y);
+					return _this.point.shiftY(y / _this.scale.y);
 				};
 			}
 		}, {
@@ -157,18 +162,17 @@
 		}, {
 			key: 'setAxisX',
 			value: function setAxisX(limits) {
-				if (limits[0] < limits[1]) this.axis.x = limits;
+				if (limits[0] < limits[1]) this.axis.x = limits;else throw new Error('The axis lower limit cannot be greater than the upper limit');
 			}
 		}, {
 			key: 'setAxisY',
 			value: function setAxisY(limits) {
-				if (limits[0] < limits[1]) this.axis.y = limits;
+				if (limits[0] < limits[1]) this.axis.y = limits;else throw new Error('The axis lower limit cannot be greater than the upper limit');
 			}
 		}, {
 			key: 'plot',
 			value: function plot(x, y) {
 				var color = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '#555';
-	
 	
 				this._points.push({
 					x: this.proportionX(x),
@@ -177,21 +181,14 @@
 				});
 			}
 		}, {
-			key: '_getLineEquation',
-			value: function _getLineEquation(m, c) {
-				return function (x) {
-					return m * x + c;
-				};
-			}
-		}, {
 			key: 'addLine',
 			value: function addLine(prop) {
 	
 				var equation = void 0;
 	
-				if (_typeof(prop['2 points']) === 'object') equation = _Line.Line.toStandardForm(prop['2 points']);else if (_typeof(prop['standard']) === 'object') equation = [prop['standard'].m, prop['standard'].c];
+				if (_typeof(prop['2 points']) === 'object') equation = _Line.Line.toStandardForm(prop['2 points']);else if (_typeof(prop.standard) === 'object') equation = [prop.standard.m, prop.standard.c];
 	
-				if (equation) this._lines.push(new _Line.Line(equation));
+				if (equation) this._lines.push(new _Line.Line(equation[0], equation[1]));
 			}
 		}, {
 			key: 'drawPoint',
@@ -209,8 +206,8 @@
 				this._ctx.restore();
 			}
 		}, {
-			key: 'drawLine',
-			value: function drawLine(p1, p2) {
+			key: 'drawSegment',
+			value: function drawSegment(p1, p2) {
 				var color = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '#555';
 	
 	
@@ -224,39 +221,84 @@
 				this._ctx.restore();
 			}
 		}, {
-			key: 'rendeAxis',
-			value: function rendeAxis() {
+			key: 'drawLine',
+			value: function drawLine(line) {
+				var _this2 = this;
 	
-				this.drawLine({ x: this.width, y: this.point.getY(0) }, { x: 0, y: this.point.getY(0) }, 'rgba(81, 128, 233, .7)');
+				var points = void 0;
 	
-				this.drawLine({ x: this.point.getX(0), y: 0 }, { x: this.point.getX(0), y: this.height }, 'rgba(81, 128, 233, .7)');
+				if (Math.abs(line.slope) > 1) {
 	
-				this.drawPoint(this.point.getX(0), this.point.getY(0), 'red', 2);
+					points = [{
+						x: this.axis.x[0],
+						y: line.getY(this.axis.x[0])
+					}, {
+						x: this.axis.x[1],
+						y: line.getY(this.axis.x[1])
+					}];
+				} else {
+	
+					points = [{
+						x: line.getX(this.axis.y[0]),
+						y: this.axis.y[0]
+					}, {
+						x: line.getX(this.axis.y[1]),
+						y: this.axis.y[1]
+					}];
+				}
+	
+				points = points.map(function (p) {
+					return {
+						x: _this2.proportionX(p.x),
+						y: _this2.proportionY(p.y)
+					};
+				});
+	
+				this.drawSegment(points[0], points[1]);
+			}
+		}, {
+			key: 'renderAxis',
+			value: function renderAxis() {
+	
+				// Draw the y axis
+				this.drawSegment({ x: this.width, y: this.point.shiftY(0) }, { x: 0, y: this.point.shiftY(0) }, this.AXIS_COLOR);
+	
+				// Draw the x axis
+				this.drawSegment({ x: this.point.shiftX(0), y: 0 }, { x: this.point.shiftX(0), y: this.height }, this.AXIS_COLOR);
+	
+				// Origin
+				this.drawPoint(this.point.shiftX(0), this.point.shiftY(0), this.CENTER_COLOR, 2);
 			}
 		}, {
 			key: 'render',
 			value: function render() {
-				var _this2 = this;
+				var _this3 = this;
 	
 				this._ctx.clearRect(0, 0, this.width, this.height);
 	
-				this.rendeAxis();
-	
+				// Draw all points
 				this._points.forEach(function (p) {
-					_this2.drawPoint(p.x, p.y, p.color);
+					return _this3.drawPoint(p.x, p.y, p.color);
 				});
+	
+				// Draw all lines
+				this._lines.forEach(function (l) {
+					return _this3.drawLine(l);
+				});
+	
+				this.renderAxis();
 			}
 		}, {
 			key: 'point',
 			get: function get() {
-				var _this3 = this;
+				var _this4 = this;
 	
 				return {
-					getX: function getX(x) {
-						return _this3.width / 2 - (_this3.axis.x[0] + _this3.axis.x[1]) / 2 + x;
+					shiftX: function shiftX(x) {
+						return _this4.width / 2 - (_this4.axis.x[0] + _this4.axis.x[1]) / 2 + x;
 					},
-					getY: function getY(y) {
-						return _this3.height / 2 + (_this3.axis.y[0] + _this3.axis.y[1]) / 2 - y;
+					shiftY: function shiftY(y) {
+						return _this4.height / 2 + (_this4.axis.y[0] + _this4.axis.y[1]) / 2 - y;
 					}
 				};
 			}
@@ -305,8 +347,8 @@
 		function Line(m, c) {
 			_classCallCheck(this, Line);
 	
-			this.m = m;
-			this.c = c;
+			this.m = m || 1;
+			this.c = c || 0;
 		}
 	
 		_createClass(Line, [{
@@ -318,6 +360,11 @@
 			key: "getX",
 			value: function getX(y) {
 				return (y - this.c) / this.m;
+			}
+		}, {
+			key: "slope",
+			get: function get() {
+				return this.m;
 			}
 		}]);
 

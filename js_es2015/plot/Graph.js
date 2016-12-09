@@ -9,18 +9,15 @@ export class Graph {
 		const fn= () => {};
 
 		return {
-			lineTo: fn, moveTo: fn, clearRect: fn,
+			lineTo: fn, moveTo: fn, clearRect: fn, 
+			arc: fn, 
 		};
 	}
 
 	constructor(config) {
 
-		this.DEFAULT_AXIS= [ 0, 200 ];
-		this.OFFSET= 30;
-
-		this._points= [];
-		this.axis= {};
-		this._lines= [];
+		this.AXIS_COLOR= 'rgba(81, 128, 233, .7)';
+		this.CENTER_COLOR= '#e95051';
 
 		this._ctx= config.context;
 
@@ -37,8 +34,12 @@ export class Graph {
 
 	_init() {
 
-		this.proportionX= x => this.point.getX( x / this.scale.x );
-		this.proportionY= y => this.point.getY( y / this.scale.y );
+		this._points= [];
+		this.axis= {};
+		this._lines= [];
+
+		this.proportionX= x => this.point.shiftX( x / this.scale.x );
+		this.proportionY= y => this.point.shiftY( y / this.scale.y );
 	}
 
 	show() {
@@ -47,8 +48,8 @@ export class Graph {
 
 	get point() {
 		return {
-			getX: x => (this.width/2 - (this.axis.x[0] + this.axis.x[1])/2 + x),
-			getY: y => (this.height/2 + (this.axis.y[0] + this.axis.y[1])/2 - y),
+			shiftX: x => (this.width/2 - (this.axis.x[0] + this.axis.x[1])/2 + x),
+			shiftY: y => (this.height/2 + (this.axis.y[0] + this.axis.y[1])/2 - y),
 		};
 	}
 
@@ -62,24 +63,21 @@ export class Graph {
 	setAxisX(limits) {
 		if(limits[0] < limits[1])
 			this.axis.x= limits;
+		else throw new Error('The axis lower limit cannot be greater than the upper limit');
 	}
 
 	setAxisY(limits) {
 		if(limits[0] < limits[1])
 			this.axis.y= limits;
+		else throw new Error('The axis lower limit cannot be greater than the upper limit');
 	}
 
 	plot(x, y, color='#555') {
-
 		this._points.push({
 			x: this.proportionX(x),
 			y: this.proportionY(y),
 			color
 		});
-	}
-
-	_getLineEquation(m, c) {
-		return x => m*x + c;
 	}
 
 	addLine(prop) {
@@ -89,11 +87,11 @@ export class Graph {
 		if(typeof prop['2 points'] === 'object')
 			equation= Line.toStandardForm(prop['2 points']);
 
-		else if(typeof prop['standard'] === 'object')
-			equation= [prop['standard'].m, prop['standard'].c];
+		else if(typeof prop.standard === 'object')
+			equation= [prop.standard.m, prop.standard.c];
 
 		if(equation)
-			this._lines.push(new Line(equation));
+			this._lines.push(new Line(equation[0], equation[1]));
 	}
 
 	drawPoint(x, y, color='#555', size=4) {
@@ -107,7 +105,7 @@ export class Graph {
 		this._ctx.restore();
 	}
 
-	drawLine(p1, p2, color='#555') {
+	drawSegment(p1, p2, color='#555') {
 
 		this._ctx.beginPath();
 		this._ctx.moveTo(p1.x, p1.y);
@@ -119,32 +117,68 @@ export class Graph {
 		this._ctx.restore();
 	}
 
-	rendeAxis() {
+	drawLine(line) {
 
-		this.drawLine(
-			{ x: this.width, y: this.point.getY(0) },
-			{ x: 0, y: this.point.getY(0) },
-			'rgba(81, 128, 233, .7)'
+		let points;
+
+		if(Math.abs(line.slope) > 1) {
+
+			points= [{
+				x: this.axis.x[0],
+				y: line.getY(this.axis.x[0]),
+			}, {
+				x: this.axis.x[1],
+				y: line.getY(this.axis.x[1]),
+			}];
+		} else {
+
+			points= [{
+				x: line.getX(this.axis.y[0]),
+				y: this.axis.y[0],
+			}, {
+				x: line.getX(this.axis.y[1]),
+				y: this.axis.y[1],
+			}];
+		}
+
+		points= points.map( p => ({
+			x: this.proportionX(p.x),
+			y: this.proportionY(p.y),
+		}));
+
+		this.drawSegment(points[0], points[1]);
+	}
+
+	renderAxis() {
+
+		// Draw the y axis
+		this.drawSegment(
+			{ x: this.width, y: this.point.shiftY(0) },
+			{ x: 0, y: this.point.shiftY(0) },
+			this.AXIS_COLOR
 		);
 
-		this.drawLine(
-			{ x: this.point.getX(0), y: 0 },
-			{ x: this.point.getX(0), y: this.height },
-			'rgba(81, 128, 233, .7)'
+		// Draw the x axis
+		this.drawSegment(
+			{ x: this.point.shiftX(0), y: 0 },
+			{ x: this.point.shiftX(0), y: this.height },
+			this.AXIS_COLOR
 		);
 
-		this.drawPoint(this.point.getX(0), this.point.getY(0), 'red', 2);
+		// Origin
+		this.drawPoint(this.point.shiftX(0), this.point.shiftY(0), this.CENTER_COLOR, 2);
 	}
 
 	render() {
 
 		this._ctx.clearRect(0, 0, this.width, this.height);
 
-		this.rendeAxis();
+		// Draw all points
+		this._points.forEach( p => this.drawPoint(p.x, p.y, p.color));
 
-		this._points.forEach( p => {
-			this.drawPoint(p.x, p.y, p.color);
-		});
+		// Draw all lines
+		this._lines.forEach( l => this.drawLine(l));
 
+		this.renderAxis();
 	}
 }
