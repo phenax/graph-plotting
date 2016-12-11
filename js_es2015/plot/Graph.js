@@ -266,6 +266,6 @@ export class Graph {
 		// Render the axes
 		this.renderAxis();
 
-		// requestAnimationFrame(this.render);
+		requestAnimationFrame(this.render);
 	}
 }
