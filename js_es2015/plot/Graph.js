@@ -130,6 +130,9 @@ export class Graph {
 		else if(typeof prop.standard === 'object')
 			equation= [prop.standard.m, prop.standard.c];
 
+		else
+			throw new Error('Invalid line equation');
+
 		if(equation)
 			this._lines.push(new Line(equation[0], equation[1]));
 

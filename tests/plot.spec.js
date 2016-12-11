@@ -5,6 +5,7 @@ const { expect }= require('chai');
 require('babel-register')();
 
 const { Graph }= require('../js_es2015/plot/Graph');
+const { Line }= require('../js_es2015/plot/Line');
 
 
 describe('Graph plotter', () => {
@@ -47,8 +48,21 @@ describe('Graph plotter', () => {
 
 	it('should draw lines', () => {
 
-		graph.addLine({
-			'2 point': [ [ 0, 0 ], [ 100, 100 ] ]
+		expect(graph._lines.length).to.eql(0);
+
+		graph.plotLine({
+			'2 points': [ [ 0, 0 ], [ 100, 100 ] ]
 		});
+
+		// Was it added
+		expect(graph._lines.length).to.eql(1);
+
+		// Is it a line
+		expect(graph._lines[0]).to.be.an.instanceof(Line);
+
+		// Check calculcations
+		expect(graph._lines[0].slope).to.eql(1);
+		expect(graph._lines[0].c).to.eql(0);
+
 	});
 });
