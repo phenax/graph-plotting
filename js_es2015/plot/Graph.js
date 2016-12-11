@@ -254,8 +254,6 @@ export class Graph {
 
 		this._ctx.clearRect(0, 0, this.width, this.height);
 
-		// Render a grid
-		this.renderGrid(10);
 
 		// Draw all points
 		this._points.forEach( p => this.drawPoint(p.x, p.y, p.color) );
@@ -263,6 +261,8 @@ export class Graph {
 		// Draw all lines
 		this._lines.forEach( line => this.drawLine(line, this.DEFAULT_LINE_COLOR) );
 
+		// Render a grid
+		this.renderGrid(10);
 		// Render the axes
 		this.renderAxis();
 

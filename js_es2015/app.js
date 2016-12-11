@@ -33,10 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		.setAxisY([-100, 100]);
 
 	for(let i= 0; i< 20; i++) {
-		graph.plot(getRandomNumber(-100, 100), getRandomNumber(-100, 100));
+		graph.plot(
+			getRandomNumber(-100, 100), 
+			getRandomNumber(-100, 100)
+		);
 	}
 
-	graph.plotLine({ 'standard': { m: 1, c: 0 }});
+	graph.plotLine({ 'standard': { m: 1, c: 20 }});
+	graph.plotLine({ '2 points': [ [ 0, 0 ], [ 2, 1 ] ]});
 
 	graph.show();
 });

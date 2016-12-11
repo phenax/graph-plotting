@@ -80,7 +80,8 @@
 			graph.plot(getRandomNumber(-100, 100), getRandomNumber(-100, 100));
 		}
 	
-		graph.plotLine({ 'standard': { m: 1, c: 0 } });
+		graph.plotLine({ 'standard': { m: 1, c: 20 } });
+		graph.plotLine({ '2 points': [[0, 0], [2, 1]] });
 	
 		graph.show();
 	});
@@ -371,9 +372,6 @@
 	
 				this._ctx.clearRect(0, 0, this.width, this.height);
 	
-				// Render a grid
-				this.renderGrid(10);
-	
 				// Draw all points
 				this._points.forEach(function (p) {
 					return _this2.drawPoint(p.x, p.y, p.color);
@@ -384,6 +382,8 @@
 					return _this2.drawLine(line, _this2.DEFAULT_LINE_COLOR);
 				});
 	
+				// Render a grid
+				this.renderGrid(10);
 				// Render the axes
 				this.renderAxis();
 	
